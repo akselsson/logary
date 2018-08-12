@@ -127,12 +127,12 @@ module Codec =
           properties =
             let thread = event |> xattr "thread"
             let ndc = event |> xe ns "NDC" |> xtext
-            let throwable = event |> xe ns "throwable" |> xtext
+            let throwable = event |> xe ns "throwable" |> xtext |> DotNetStacktrace.parse
             (HashMap.empty, event |> xe ns "properties" |> xes "data")
             ||> Seq.fold foldProp
             |> if thread = "" then id else addLiteral "thread" thread
             |> if ndc = "" then id else addLiteral "NDC" ndc
-            |> if String.IsNullOrEmpty throwable then id else addLiteral "error" throwable
+            |> if Array.isEmpty throwable then id else addLiteral "error" throwable
         }
         |> Result.Ok
 

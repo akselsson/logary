@@ -53,6 +53,7 @@ let stackdriver =
   )
 
 open Stackdriver.Impl
+open Logary.Formatting
 
 [<Tests>]
 let target =
@@ -66,14 +67,17 @@ let target =
         |> Message.setField "data-key" "data-value"
         |> Message.setField "tags" [ "integration" ]
         |> Message.setContext "service" "tests"
-        |> Message.setField "error" "Error at x"
+        |> Message.setField "error" (DotNetStacktrace.parse "java.lang.Exception: someexception-third
+ 	at org.apache.log4j.chainsaw.Generator.run(Generator.java:94)")
         |> fun m -> m.toLogEntry()
 
       Expect.equal subject.Severity LogSeverity.Warning "severity should be warning"
       Expect.equal (subject.Labels.["service"]) "tests" "should have correct context"
 
-      let expectedMessage = "Testing started" + Environment.NewLine + "Error at x"
-      Expect.equal subject.JsonPayload.Fields.["message"].StringValue expectedMessage "should have message with error"
+      let messagePayload = subject.JsonPayload.Fields.["message"].StringValue
+      Expect.stringContains messagePayload "Testing started" "Message should have message"
+      Expect.stringContains messagePayload "java.lang.Exception: someexception-third" "Message should have stacktrace line 1"
+      Expect.stringContains messagePayload "at org.apache.log4j.chainsaw.Generator.run(Generator.java:94)" "Message should have stacktrace line 2"
     
     testCase "serialise with exception" <| fun () ->
       let exn = raisedExnWithInner "raised exception" (raisedExn "inner")
@@ -103,6 +107,8 @@ let target =
 
       do! flush target
     }
+
+    
   ]
 
 [<EntryPoint>]

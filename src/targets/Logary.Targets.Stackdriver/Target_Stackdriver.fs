@@ -199,18 +199,7 @@ module internal Impl =
   // https://cloud.google.com/error-reporting/docs/formatting-error-messages
   let formatMessageField (m: Message) =   
       use sw = new StringWriter()
-      MessageWriter.verbatim.write sw m
-      
-      let error = tryGetField "error" m
-      if error.IsSome then
-        sw.Write Environment.NewLine
-        sw.Write (error.Value.ToString())
-
-      getExns m 
-        |> Seq.iter (fun exn ->
-          sw.Write Environment.NewLine
-          sw.Write exn)
-      
+      MessageWriter.verbatimExceptions.write sw m
       sw.ToString()
 
   [<Literal>]
@@ -239,6 +228,7 @@ module internal Impl =
 
       let payloadFields =
         Message.getAllFields x
+        |> Seq.filter (fun (key,value) -> not (String.Equals (key, "error")))
         |> addMessageFields
         |> Seq.fold addToStruct (WellKnownTypes.Struct())
 

@@ -93,15 +93,25 @@ module MessageWriter =
           tokeniseTemplateWithGauges tw.FormatProvider defaultDestr m
           |> Seq.map fst
           |> Seq.iter tw.Write
+
     }
 
-  /// VerbatimNewline simply outputs the omessage and no other information
+  /// VerbatimNewline simply outputs the message and no other information
   /// and appends a newline to the string.
   let verbatimNewLine =
     { new MessageWriter with
         member x.write tw m =
           verbatim.write tw m
           tw.WriteLine()
+    }
+
+  /// verbatimExceptions simply outputs the message and exceptions
+  let verbatimExceptions = 
+    { new MessageWriter with
+        member x.write tw m =
+          verbatimNewLine.write tw m
+          tokeniseExceptions tw.FormatProvider Environment.NewLine m 
+          |> Seq.iter tw.Write
     }
 
   /// <see cref="MessageWriter.LevelDatetimePathMessageNewLine" />
